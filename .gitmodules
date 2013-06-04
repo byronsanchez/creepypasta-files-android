@@ -1,0 +1,6 @@
+[submodule "libs"]
+	path = libs
+	url = https://github.com/byronsanchez/creepypasta-files-dependencies-android.git
+[submodule "res"]
+	path = res
+	url = https://github.com/byronsanchez/creepypasta-files-resources-android.git
