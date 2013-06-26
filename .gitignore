@@ -13,10 +13,9 @@
 # Eclipse files
 .settings*/
 .buildpath*
-project.properties*
 .htaccess*
 error_log*
-.project*
+.project
 
 
 #########
