@@ -99,8 +99,11 @@ function prepare_layouts {
 }
 
 function prepare_NodeActivity {
+  # Have the shell interpret the newline for cross-compatibility.
+  # (Some versions of sed won't interpret it).
+  lf=$'\n'
   target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/NodeActivity.java"
-  sub_string="s|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);\n                    adRequest.addTestDevice(\"$PHYSICAL_DEVICE_ID\");|g"
+  sub_string="s|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);\\$lf                    adRequest.addTestDevice(\"$PHYSICAL_DEVICE_ID\");|g"
   sed_file "$target" "$sub_string"
 }
 
