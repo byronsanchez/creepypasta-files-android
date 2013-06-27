@@ -25,19 +25,26 @@ PHYSICAL_DEVICE_ID=""
 # Modifies: ShopActivity.java in src/net/globide/creepypasta_files_07/
 BILLING_PUBLIC_KEY=""
 
+######################
+# SYSTEM CONFIGURATION
+######################
+
 # Don't modify this unless you are moving this file.
 PROJECT_DIR="."
+# Extension sed uses for backups during substitution.
+BACKUP_EXT=".bu"
 
 ###########
 # FUNCTIONS
 ###########
 
 function validate_user {
-    echo "
+    printf "
     DO NOT PROCEED IF YOU HAVE NOT SET UP THIS SCRIPT'S CONFIG VARIABLES!
 
     This script is meant to be executed only once, right after a git clone
-    (of the master AND submodule repositories).
+    (of the master AND submodule repositories). Run this script from the
+    root of the project directory.
 
     It will customize the repository so that the application can compile
     properly, using your own IDs for various components. If you do not set
@@ -51,11 +58,12 @@ function validate_user {
     "
 
   input=""
-  echo "Are you ready to run the build? (y/n)"
+  printf "Are you ready to run the build (y/n)? "
   read input
+  printf "\n"
   if [ "$input" != "y" ]; then
     message="Build aborted!"
-    echo -e "\e[31m$message\e[0m"
+    printf "\e[31m$message\e[0m\n"
     exit 1
   fi
 }
@@ -64,39 +72,42 @@ function check_sanity {
   isInvalid=false
   if [ -z "$AD_UNIT_ID" ]; then
     isInvalid=true
-    message="Error: You must set the AD_UNIT_ID variable"
-    echo -e "\e[31m$message\e[0m"
+    message="Error: You must set the \$AD_UNIT_ID variable"
+    printf "\e[31m$message\e[0m\n"
   fi
   if [ -z "$PHYSICAL_DEVICE_ID" ]; then
     isInvalid=true
-    message="Error: You must set the PHYSICAL_DEVICE_ID variable"
-    echo -e "\e[31m$message\e[0m"
+    message="Error: You must set the \$PHYSICAL_DEVICE_ID variable"
+    printf "\e[31m$message\e[0m\n"
   fi
   if [ -z "$BILLING_PUBLIC_KEY" ]; then
     isInvalid=true
-    message="Error: You must set the BILLING_PUBLIC_KEY variable"
-    echo -e "\e[31m$message\e[0m"
+    message="Error: You must set the \$BILLING_PUBLIC_KEY variable"
+    printf "\e[31m$message\e[0m\n"
   fi
   if $isInvalid; then
     message="Build aborted due to errors!"
-    echo -e "\e[31m$message\e[0m"
+    printf "\e[31m$message\e[0m\n"
     exit 2
   fi
 }
 
 function prepare_layouts {
   target="$PROJECT_DIR/res/layout*/activity_node.xml"
-  sed -i "s|YOUR_AD_UNIT_ID|$AD_UNIT_ID|g" $target
+  sub_string="s|YOUR_AD_UNIT_ID|$AD_UNIT_ID|g"
+  sed_file "$target" "$sub_string"
 }
 
 function prepare_NodeActivity {
   target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/NodeActivity.java"
-  sed -i "s|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);\n                    adRequest.addTestDevice(\"$PHYSICAL_DEVICE_ID\");|g" $target
+  sub_string="s|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);\n                    adRequest.addTestDevice(\"$PHYSICAL_DEVICE_ID\");|g"
+  sed_file "$target" "$sub_string"
 }
 
 function prepare_ShopActivity {
   target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/ShopActivity.java"
-  sed -i "s|String base64EncodedPublicKey = getKey();|String base64EncodedPublicKey = \"$BILLING_PUBLIC_KEY\";|g" $target
+  sub_string="s|String base64EncodedPublicKey = getKey();|String base64EncodedPublicKey = \"$BILLING_PUBLIC_KEY\";|g"
+  sed_file "$target" "$sub_string"
 }
 
 function build_database {
@@ -109,28 +120,43 @@ function update_android_project {
   android update project --path $PROJECT_DIR
 }
 
+function sed_file {
+  file=$1
+  sub_string=$2
+
+  sed -i$BACKUP_EXT "$sub_string" $file
+  exit_code=$?
+
+  if [ $exit_code != 0 ]; then
+    message="Failed to run the build on file \"$file\"."
+    printf "\e[31m$message\e[0m\n"
+  else
+    rm $file$BACKUP_EXT
+  fi
+}
+
 ######
 # MAIN
 ######
 
-validate_user
-check_sanity
 case "$1" in
 all)
+  validate_user
+  check_sanity
   prepare_layouts
   prepare_NodeActivity
   prepare_ShopActivity
   build_database
   update_android_project
   message="Build complete!"
-  echo -e "\e[32m$message\e[0m"
+  printf "\e[32m$message\e[0m\n"
   ;;
 *)
-  echo 'Usage:' `basename $0` '[option]'
-  echo 'Available options:'
+  printf "Usage: `basename $0` [option]\n"
+  printf "Available options:\n"
   for option in all
   do 
-      echo '  -' $option
+    printf "  - $option\n"
   done
   ;;
 esac
