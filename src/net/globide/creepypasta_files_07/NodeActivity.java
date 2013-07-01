@@ -40,6 +40,7 @@ import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import com.google.ads.AdRequest;
 import com.google.ads.AdView;
@@ -81,7 +82,7 @@ public class NodeActivity extends Activity implements OnClickListener {
     // Define necessary view properties.
     private TextView mTvNodeTitle;
     private TextView mTvNodeBody;
-    private ImageButton mIbNodeBookmark;
+    private ToggleButton mTbNodeBookmark;
     private ImageButton mIbNodeSettings;
     private AdView mAdView;
 
@@ -137,20 +138,31 @@ public class NodeActivity extends Activity implements OnClickListener {
         mId = (long) extras.getInt("id");
 
         // Attach the views to their corresponding resource ids.
-        mIbNodeBookmark = (ImageButton) findViewById(R.id.ibNodeBookmark);
+        mTbNodeBookmark = (ToggleButton) findViewById(R.id.tbNodeBookmark);
         mTvNodeTitle = (TextView) findViewById(R.id.tvNodeTitle);
         mIbNodeSettings = (ImageButton) findViewById(R.id.ibNodeSettings);
         mTvNodeBody = (TextView) findViewById(R.id.tvNodeBody);
 
         // Set any necessary event listeners.
         mIbNodeSettings.setOnClickListener(this);
-        mIbNodeBookmark.setOnClickListener(this);
+        mTbNodeBookmark.setOnClickListener(this);
 
         // Query the database for a node containing the id which was passed
         // from BrowseActivity.
         mNodeData = mDbNodeHelper.getNodeData(mId);
         // Get variable data in case ads are off.
         mVariableData = mDbNodeHelper.getVariableListData();
+        // Define whether or not a bookmark is currently set for the node.
+        long result = 0;
+        result = mDbNodeHelper.getNodeIsBookmarked(mId);
+
+        // Set the initial bookmark button state based on the result
+        if (result == 0) {
+          mTbNodeBookmark.setChecked(false);
+        }
+        else {
+          mTbNodeBookmark.setChecked(true);
+        }
 
         // Close the database.
         mDbNodeHelper.close();
@@ -276,41 +288,34 @@ public class NodeActivity extends Activity implements OnClickListener {
 
         switch (view.getId()) {
         // Bookmark Button
-            case R.id.ibNodeBookmark:
+            case R.id.tbNodeBookmark:
 
-                // Set the bookmark boolean to true in the database.
+                // Define a boolean integer to contain whether or not we should
+                // bookmark the current node.
+                int isBookmarked = 0;
+
+                String resultText = "";
+
+                // The toggle button does the switch for us before invoking
+                // onClick, so we just need to react to the toggle event.
+                if ( mTbNodeBookmark.isChecked() ) {
+                    isBookmarked = 1;
+                    mTbNodeBookmark.setChecked(true);
+                    resultText = "Bookmark has been added.";
+                } else {
+                    // Else remove it.
+                    isBookmarked = 0;
+                    mTbNodeBookmark.setChecked(false);
+                    resultText = "Bookmark has been removed.";
+                }
 
                 // Create our database object so we can communicate with the db.
                 mDbNodeHelper = new NodeDatabase(this);
 
                 // Call the createDatabase() function...just in case for some
-                // weird reason
-                // the database does not yet exist. Otherwise, it will load our
-                // database
-                // for
-                // use.
+                // weird reason the database does not yet exist. Otherwise, it
+                // will load our database for use.
                 mDbNodeHelper.createDatabase();
-
-                // Define whether or not a bookmark is currently set for the
-                // node.
-                int result = 0;
-                result = mDbNodeHelper.getNodeIsBookmarked(mId);
-                // Define a boolean integer to contain whether or not we should
-                // bookmark
-                // the current node.
-                int isBookmarked = 0;
-
-                String resultText = "";
-
-                // If a bookmark is currently not set, add one.
-                if (result == 0) {
-                    isBookmarked = 1;
-                    resultText = "Bookmark has been added.";
-                } else {
-                    // Else remove it.
-                    isBookmarked = 0;
-                    resultText = "Bookmark has been removed.";
-                }
 
                 // Query the database to set/remove a bookmark for the current
                 // node.
