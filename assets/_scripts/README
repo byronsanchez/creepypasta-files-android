@@ -13,3 +13,8 @@ build.sh
   To setup the necessary config variables, open build.sh in a text editor
   and only modify the CONFIGURATION section. Do not modify $PROJECT_DIR,
   unless you are moving the build.sh file.
+  
+  When you are ready, run the build script:
+
+    assets/_scripts/build.sh all
+    

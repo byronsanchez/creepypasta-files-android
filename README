@@ -1,4 +1,4 @@
-        Creepypasta Files for Android v0.1 <http://hackbytes.com>
+        Creepypasta Files for Android v1.0 <http://chompix.com>
 
 This is the master repository of the "Creepypasta Files for Android"
 app. The submodule repositories can be found at the following locations:
@@ -9,15 +9,25 @@ app. The submodule repositories can be found at the following locations:
 INSTRUCTIONS
 
   Clone the creepypasta-files-android repository, or alternatively,
-  clone your fork of the creepypasta-files-android repository. Then
-  add the necessary submodules:
+  clone your fork of the creepypasta-files-android repository, along
+  with its submodules.
 
+  For git version 1.6.5 or higher, run:
+  
+    git clone --recursive https://github.com/byronsanchez/creepypasta-files-android.git
     cd creepypasta-files-android
-    git submodule add https://github.com/byronsanchez/creepypasta-files-dependencies-android.git libs
-    git submodule add https://github.com/byronsanchez/creepypasta-files-resources-android.git res
-    git commit -m 'first commit with submodules'
+    assets/_scripts/build.sh all
+  
+  For other versions of git, run:
+  
+    https://github.com/byronsanchez/creepypasta-files-android.git
+    cd creepypasta-files-android
+    git submodule update --init
+    assets/_scripts/build.sh all
 
-  Now you're all set to hack "Creepypasta Files for Android"!
+  Follow the instructions in the build script carefully. Once you are
+  done with the build script, you will be all set to hack "Creepypasta
+  Files for Android"!
 
 STRUCTURE
 
@@ -54,4 +64,3 @@ LICENSE
   ---
   
   Read the COPYRIGHT file for why a license needed to be added.
-  

@@ -7,7 +7,7 @@
 # Your AdMob unit id. You need to sign up with AdMob.
 #
 # See: https://developers.google.com/mobile-ads-sdk/docs/admob/fundamentals#defineadview
-# Modifies: activity_node.xml in layout*/
+# Modifies: activity_node.xml in res/layout*/
 AD_UNIT_ID=""
 
 # If you are going to install this on a physical device (a real phone as
@@ -54,8 +54,7 @@ function validate_user {
 
     To setup the necessary config variables, open build.sh in a text editor
     and only modify the CONFIGURATION section. Do not modify \$PROJECT_DIR,
-    unless you are moving the build.sh file.
-    "
+    unless you are moving the build.sh file.\n\n"
 
   input=""
   printf "Are you ready to run the build (y/n)? "
