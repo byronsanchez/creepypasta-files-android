@@ -1,3 +1,5 @@
+-- Baseline schema
+
 CREATE TABLE categories(_id INTEGER PRIMARY KEY NOT NULL, category TEXT NOT NULL, description TEXT);
 CREATE TABLE "node" ("_id" INTEGER PRIMARY KEY  AUTOINCREMENT  NOT NULL , "cid" INTEGER, "title" TEXT, "body" TEXT, "is_bookmarked" BOOL NOT NULL  DEFAULT 0, FOREIGN KEY(cid) REFERENCES categories(_id));
 CREATE TABLE variables (_id INTEGER PRIMARY KEY, key TEXT NOT NULL UNIQUE, value TEXT, sku TEXT NOT NULL UNIQUE);

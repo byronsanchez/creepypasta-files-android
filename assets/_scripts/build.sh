@@ -112,12 +112,6 @@ function prepare_ShopActivity {
   sed_file "$target" "$sub_string"
 }
 
-function build_database {
-  target_db="$PROJECT_DIR/assets/creepypasta_files.db"
-  target_ddl="$PROJECT_DIR/assets/creepypasta-files.sql"
-  sqlite3 $target_db < $target_ddl
-}
-
 function update_android_project {
   android update project --path $PROJECT_DIR
 }
@@ -148,7 +142,6 @@ all)
   prepare_layouts
   prepare_NodeActivity
   prepare_ShopActivity
-  build_database
   update_android_project
   message="Build complete!"
   printf "\e[32m$message\e[0m\n"
