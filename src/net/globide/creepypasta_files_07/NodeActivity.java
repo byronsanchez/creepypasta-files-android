@@ -38,12 +38,17 @@ import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.ads.AdRequest;
 import com.google.ads.AdView;
+
+// TODO: remove or keep
+import android.graphics.Color;
+import android.util.Log;
 
 /**
  * Outputs a single node for a user to read. This includes the title and the
@@ -81,7 +86,7 @@ public class NodeActivity extends Activity implements OnClickListener {
 
     // Define necessary view properties.
     private TextView mTvNodeTitle;
-    private TextView mTvNodeBody;
+    private PinchToZoomWebView mWvNodeBody;
     private ToggleButton mTbNodeBookmark;
     private ImageButton mIbNodeSettings;
     private AdView mAdView;
@@ -125,10 +130,8 @@ public class NodeActivity extends Activity implements OnClickListener {
         mDbNodeHelper = new NodeDatabase(this);
 
         // Call the createDatabase() function...just in case for some weird
-        // reason
-        // the database does not yet exist. Otherwise, it will load our database
-        // for
-        // use.
+        // reason the database does not yet exist. Otherwise, it will load our
+        // database for use.
         mDbNodeHelper.createDatabase();
 
         // Setup a bundle and store any data passed from the activity
@@ -141,7 +144,7 @@ public class NodeActivity extends Activity implements OnClickListener {
         mTbNodeBookmark = (ToggleButton) findViewById(R.id.tbNodeBookmark);
         mTvNodeTitle = (TextView) findViewById(R.id.tvNodeTitle);
         mIbNodeSettings = (ImageButton) findViewById(R.id.ibNodeSettings);
-        mTvNodeBody = (TextView) findViewById(R.id.tvNodeBody);
+        mWvNodeBody = (PinchToZoomWebView) findViewById(R.id.wvNodeBody);
 
         // Set any necessary event listeners.
         mIbNodeSettings.setOnClickListener(this);
@@ -170,7 +173,29 @@ public class NodeActivity extends Activity implements OnClickListener {
         // Populate the text fields with corresponding data from the SQLite
         // database.
         mTvNodeTitle.setText(mNodeData.title);
-        mTvNodeBody.setText(Html.fromHtml(mNodeData.body, imgGetter, null));
+        String encoding = "utf-8";
+        String mime = "text/html";
+        mWvNodeBody.getSettings().setJavaScriptEnabled(true);
+        mWvNodeBody.getSettings().setJavaScriptCanOpenWindowsAutomatically(false);
+        mWvNodeBody.getSettings().setPluginsEnabled(true);
+        mWvNodeBody.setBackgroundColor( Color.parseColor("#000000") );
+        mWvNodeBody.setHorizontalScrollBarEnabled(true); 
+        mWvNodeBody.setVerticalScrollBarEnabled(true); 
+        mWvNodeBody.setScrollBarStyle(PinchToZoomWebView.SCROLLBARS_OUTSIDE_OVERLAY);
+        // For 2.0 and 2.1 - Double tap won't work without this.
+        mWvNodeBody.getSettings().setUseWideViewPort(true);
+        String nodeURI="file:///android_asset/raw/";
+
+        // TODO: Consider moving the screen dimension generation code
+        // elsewhere if images become common place in the node. ALSO add
+        // zoom functionality.
+
+        // Get the screen width and height.
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        float width = dm.widthPixels;
+
+        mWvNodeBody.loadDataWithBaseURL(nodeURI, "<html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes\" /><style type=\"text/css\"> img {width: " + width + ";}</style><body bgcolor=\"#000000\" text=\"#C4C4C4\">" + mNodeData.body + "</body></html>", mime, encoding, "");
 
         /*
          * AdMob.
@@ -196,6 +221,7 @@ public class NodeActivity extends Activity implements OnClickListener {
     private ImageGetter imgGetter = new ImageGetter() {
 
         public Drawable getDrawable(String source) {
+            Log.d("NodeActivity", "IMAGEGETTER INVOKED");
             Drawable drawable = null;
 
             // Get the resource by string instead of the usual integer id.
@@ -269,7 +295,7 @@ public class NodeActivity extends Activity implements OnClickListener {
         int textSize = mTextSizeArray[textSizeKey];
 
         // Update the node body's text size.
-        mTvNodeBody.setTextSize(textSize);
+        mWvNodeBody.getSettings().setDefaultFontSize(textSize);
     }
 
     /**
