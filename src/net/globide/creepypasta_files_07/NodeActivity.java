@@ -25,30 +25,33 @@
 
 package net.globide.creepypasta_files_07;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import android.app.Activity;
 import android.content.Intent;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
+import android.content.pm.PackageManager.NameNotFoundException;
+import android.graphics.Color;
 import android.graphics.drawable.Drawable;
+import android.net.Uri;
 import android.os.Bundle;
-import android.text.Html;
-import android.text.Html.ImageGetter;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
 import android.widget.ImageButton;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.ads.AdRequest;
 import com.google.ads.AdView;
-
-// TODO: remove or keep
-import android.graphics.Color;
-import android.util.Log;
 
 /**
  * Outputs a single node for a user to read. This includes the title and the
@@ -92,7 +95,11 @@ public class NodeActivity extends Activity implements OnClickListener {
     private AdView mAdView;
 
     // Tablet vs. phone boolean. Defaults to phone.
-    private boolean isTablet = false;
+    public static boolean sIsTablet = false;
+    public static boolean sIsSmall = false;
+    public static boolean sIsNormal = false;
+    public static boolean sIsLarge = false;
+    public static boolean sIsExtraLarge = false;
 
     /**
      * Implements onCreate(). Loads preferences if they exist and sets up the
@@ -110,14 +117,11 @@ public class NodeActivity extends Activity implements OnClickListener {
         setContentView(R.layout.activity_node);
 
         // Determine whether or not the current device is a tablet.
-        isTablet = getResources().getBoolean(R.bool.isTablet);
-
-        // If the current device is a tablet, increase the font sizes
-        if (isTablet) {
-            for (int i = 0; i < mTextSizeArray.length; i++) {
-                mTextSizeArray[i] += 4;
-            }
-        }
+        NodeActivity.sIsTablet = getResources().getBoolean(R.bool.isTablet);
+        NodeActivity.sIsSmall = getResources().getBoolean(R.bool.isSmall);
+        NodeActivity.sIsNormal = getResources().getBoolean(R.bool.isNormal);
+        NodeActivity.sIsLarge = getResources().getBoolean(R.bool.isLarge);
+        NodeActivity.sIsExtraLarge = getResources().getBoolean(R.bool.isExtraLarge);
 
         /*
          * Application.
@@ -170,11 +174,46 @@ public class NodeActivity extends Activity implements OnClickListener {
         // Close the database.
         mDbNodeHelper.close();
 
+        float padding = 0;
+        if (NodeActivity.sIsTablet) {
+            // If the current device is a tablet, increase the font sizes
+            for (int i = 0; i < mTextSizeArray.length; i++) {
+                mTextSizeArray[i] += 4;
+            }
+
+            if (NodeActivity.sIsSmall) {
+                padding = 6;
+            }
+            else if (NodeActivity.sIsNormal) {
+                padding = 8;
+            }
+            else if (NodeActivity.sIsLarge) {
+                padding = 9;
+            }
+            else if (NodeActivity.sIsExtraLarge) {
+                padding = 10;
+            }
+        } else {
+            padding = 4;
+        }
+
+        // Get the screen width and height.
+        DisplayMetrics dm = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(dm);
+        float width = dm.widthPixels;
+        float height = dm.heightPixels;
+        float itemWidth = width - (padding * 2);
+        float itemHeight = height - (padding * 2);
+
+        // Render any custom tags if necessary.
+        mNodeData.body = renderCustomTags(mNodeData.body, itemWidth);
         // Populate the text fields with corresponding data from the SQLite
         // database.
         mTvNodeTitle.setText(mNodeData.title);
         String encoding = "utf-8";
         String mime = "text/html";
+        mWvNodeBody.setPadding((int) padding, (int) padding, (int) padding, (int) padding);
+        mWvNodeBody.setWebViewClient(new CustomWebViewClient(this));
         mWvNodeBody.getSettings().setJavaScriptEnabled(true);
         mWvNodeBody.getSettings().setJavaScriptCanOpenWindowsAutomatically(false);
         mWvNodeBody.getSettings().setPluginsEnabled(true);
@@ -186,16 +225,7 @@ public class NodeActivity extends Activity implements OnClickListener {
         mWvNodeBody.getSettings().setUseWideViewPort(true);
         String nodeURI="file:///android_asset/raw/";
 
-        // TODO: Consider moving the screen dimension generation code
-        // elsewhere if images become common place in the node. ALSO add
-        // zoom functionality.
-
-        // Get the screen width and height.
-        DisplayMetrics dm = new DisplayMetrics();
-        getWindowManager().getDefaultDisplay().getMetrics(dm);
-        float width = dm.widthPixels;
-
-        mWvNodeBody.loadDataWithBaseURL(nodeURI, "<html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes\" /><style type=\"text/css\"> img {width: " + width + ";}</style><body bgcolor=\"#000000\" text=\"#C4C4C4\">" + mNodeData.body + "</body></html>", mime, encoding, "");
+        mWvNodeBody.loadDataWithBaseURL(nodeURI, "<html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes\" /><style type=\"text/css\"> img {width: " + itemWidth + ";}</style><body bgcolor=\"#000000\" text=\"#C4C4C4\">" + mNodeData.body + "</body></html>", mime, encoding, "");
 
         /*
          * AdMob.
@@ -212,63 +242,6 @@ public class NodeActivity extends Activity implements OnClickListener {
             }
         }
     }
-
-    // TODO: See if there is a way to center the image.
-
-    /**
-     * Draws images to the screen when html is parsed.
-     */
-    private ImageGetter imgGetter = new ImageGetter() {
-
-        public Drawable getDrawable(String source) {
-            Log.d("NodeActivity", "IMAGEGETTER INVOKED");
-            Drawable drawable = null;
-
-            // Get the resource by string instead of the usual integer id.
-            // This is because we are given a string by the override; this
-            // string is the img src, which we are exclusively using as a
-            // resource identifier.
-            drawable = getResources().getDrawable(
-                    getResources().getIdentifier(source, "raw", getPackageName()));
-
-            // TODO: Consider moving the screen dimension generation code
-            // elsewhere if images become common place in the node. ALSO add
-            // zoom functionality.
-
-            // Get the screen width and height.
-            DisplayMetrics dm = new DisplayMetrics();
-            getWindowManager().getDefaultDisplay().getMetrics(dm);
-            float screenWidth = dm.widthPixels;
-            // Get the image width and height.
-            float imageWidth = drawable.getIntrinsicWidth();
-            float imageHeight = drawable.getIntrinsicHeight();
-            // Define variables to store the image bounds.
-            int width = 0;
-            int height = 0;
-
-            // Resize the image if the image width exceeds the screen width.
-            if (imageWidth >= screenWidth) {
-                // If we need to resize the image because the width is too big,
-                // get the resize ratio when reducing size to the screen width.
-                float resizeRatio = screenWidth / imageWidth;
-                // Calculate the new width and height values according to this
-                // ratio.
-                width = (int) (imageWidth * resizeRatio);
-                height = (int) (imageHeight * resizeRatio);
-            } else {
-                // Else if the image width is NOT bigger than the screen size
-                // then the image size remains the same.
-                width = (int) imageWidth;
-                height = (int) imageHeight;
-            }
-
-            // Set the image bounds.
-            drawable.setBounds(0, 0, width, height);
-
-            // Return the image to be drawn to the screen.
-            return drawable;
-        }
-    };
 
     /**
      * Implements onResume(). This will be triggered when the activity first
@@ -358,8 +331,7 @@ public class NodeActivity extends Activity implements OnClickListener {
             // Settings Button
             case R.id.ibNodeSettings:
                 // Display a quick settings dialog displaying only critical
-                // style
-                // preferences.
+                // style preferences.
                 intentClass = "SettingsActivity";
 
                 // If intentClass is NOT empty due to an activity button being
@@ -408,6 +380,7 @@ public class NodeActivity extends Activity implements OnClickListener {
     @Override
     public void onBackPressed() {
         super.onBackPressed();
+
         // Kill the activity.
         finish();
     }
@@ -424,5 +397,154 @@ public class NodeActivity extends Activity implements OnClickListener {
             mAdView.destroy();
         }
         super.onDestroy();
+    }
+
+    /**
+     * Renders tags placed in the node and returns the entired body of the node, whether
+     * it has been rendered or not.
+     */
+    public String renderCustomTags(String nodeString, float width) {
+        // Video tags
+        String syntax = "\\[video\\s+?(.*?)(?:\\s+?\\|\\s+?(.*?))?\\]";
+        Pattern pattern = Pattern.compile(syntax);
+        Matcher matcher = pattern.matcher(nodeString);
+        float height = 0;
+
+        while (matcher.find()) {
+            String matchString = matcher.group(0);
+            String source = matcher.group(1);
+            String style = matcher.group(2);
+
+            if (source != null && !(source.length() == 0)) {
+                // Set default and flags for optional components.
+                if (style == null || style.length() == 0) {
+                    height = .75f * width;
+                }
+                else {
+                    if (style.equals("widescreen")) {
+                        height = .5625f * width;
+                    }
+                    else {
+                        // If it's set to anything else, just use the default value.
+                        height = .75f * width;
+                    }
+                }
+
+                // Youtube regex.
+                String syntaxYoutube = "(?:https?:\\/\\/)?(?:www\\.)?youtu(?:\\.be|be\\.com)\\/(?:watch\\?v=)?([\\w\\-]{10,})";
+                Pattern patternYoutube = Pattern.compile(syntaxYoutube);
+                Matcher matcherYoutube = patternYoutube.matcher(source);
+                // Truncate any decimal portions.
+                int intWidth = (int) width;
+                int intHeight = (int) height;
+
+                if (matcherYoutube.find()) {
+                    String id = matcherYoutube.group(1);
+                    // Match only the particular tag we are working on. This is
+                    // because there may be multiple video tags per page.
+                    String replacementString = "<iframe width=\"" + intWidth + "\" height=\"" + intHeight + "\" src=\"http://www.youtube.com/embed/" + id + "\" frameborder=\"0\" allowfullscreen></iframe>";
+                    nodeString = nodeString.replace(matchString, replacementString);
+                }
+            }
+        }
+
+        return nodeString;
+    }
+
+    /**
+     * Whenever a youtube link is clicked, this class will launch the native
+     * youtube app to view the video.
+     */
+
+    public class CustomWebViewClient extends WebViewClient {
+
+        public Context mContext;
+
+        /**
+         * Constructor.
+         *
+         * Sets the calling activity as the context.
+         */
+        public CustomWebViewClient(Activity activity) {
+            super();
+            mContext = activity;
+        }
+
+        /**
+         * Overrides shouldOverrideUrlLoading().
+         *
+         * Overrides WebView browser loads. If the content being loaded comes from
+         * a particular URL, we can change what happens. For this case, we are
+         * going to launch the native youtube application for any youtube embeds.
+         */
+        @Override
+        public boolean shouldOverrideUrlLoading(WebView view, String url) {
+            Uri uri = Uri.parse(url);
+            if (uri.getHost().contains("youtube.com")) {
+                String packageName = "com.google.android.youtube";
+                try {
+                    Intent viewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    if (isApplicationInstalled(mContext, packageName)) {
+                        viewIntent.setPackage(packageName);
+                    }
+                    mContext.startActivity(viewIntent);
+                } catch (Exception e) {
+                    Intent viewIntent = new Intent(Intent.ACTION_VIEW, Uri.parse(url));
+                    mContext.startActivity(viewIntent);
+                }
+                return true;
+            }
+
+            return false;
+        }
+
+        /**
+         * Checks if the device has a specified application installed and returns
+         * a boolean for the check.
+         */
+        public boolean isApplicationInstalled(Context context, String packageName) {
+            PackageManager packageManager = context.getPackageManager();
+            try {
+                packageManager.getPackageInfo(packageName, PackageManager.GET_ACTIVITIES);
+                return true;
+            } catch (NameNotFoundException e) {
+            }
+            return false;
+        }
+
+        /**
+         * Overrides onPageFinished().
+         *
+         * When the page is finished loading, the youtube iframe embed will show up, but it
+         * will still act like an embedded object, since it is not an actual link. This
+         * function creates the link to the youtube video and positions it over the video
+         * so that the embed essentially becomes clickable. This will launch the native
+         * youtube app.
+         */
+        @Override
+        public void onPageFinished(final WebView view, String url) {
+            
+            String javascript = "javascript:" +
+                "var iframes = document.getElementsByTagName('iframe');" +
+                "for (var i = 0, l = iframes.length; i < l; i++) {" +
+                "   var iframe = iframes[i]," +
+                "   a = document.createElement('a');" +
+                "   a.setAttribute('href', iframe.src);" +
+                "   d = document.createElement('div');" +
+                "   d.style.width = iframe.offsetWidth + 'px';" +
+                "   d.style.height = iframe.offsetHeight + 'px';" +
+                "   d.style.top = iframe.offsetTop + 'px';" +
+                "   d.style.left = iframe.offsetLeft + 'px';" +
+                "   d.style.position = 'absolute';" +
+                "   d.style.opacity = '0';" +
+                "   d.style.filter = 'alpha(opacity=0)';" +
+                "   d.style.background = 'black';" +
+                "   a.appendChild(d);" +
+                "   iframe.offsetParent.appendChild(a);" +
+                "}";
+            view.loadUrl(javascript);
+
+            super.onPageFinished(view, url);
+        }
     }
 }
