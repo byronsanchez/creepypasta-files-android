@@ -55,7 +55,6 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class NodeDatabase extends SQLiteOpenHelper {
 
     // Define the SQLite database location.
-    private static final String DATABASE_PATH = "/data/data/net.globide.creepypasta_files_07/databases/";
     private static final String DATABASE_NAME = "creepypasta_files.db";
 
     // Define the tables used in the application.
