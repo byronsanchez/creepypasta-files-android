@@ -10,6 +10,15 @@
 # Modifies: activity_node.xml in res/layout*/
 AD_UNIT_ID=""
 
+# Your Inapp Billing Public Key. This is NECESSARY if you want the shop
+# to work.
+#
+# See: http://developer.android.com/google/play/billing/billing_integrate.html#billing-security
+# Modifies: ShopActivity.java in src/net/globide/creepypasta_files_07/
+BILLING_PUBLIC_KEY=""
+
+# OPTIONAL
+#
 # If you are going to install this on a physical device (a real phone as
 # opposed to an emulator), you need to place your physical device id here
 # so you don't get served real ads.
@@ -17,13 +26,6 @@ AD_UNIT_ID=""
 # See: https://developers.google.com/mobile-ads-sdk/docs/admob/best-practices#testmode
 # Modifies: NodeActivity.java in src/net/globide/creepypasta_files_07/
 PHYSICAL_DEVICE_ID=""
-
-# Your Inapp Billing Public Key. This is NECESSARY if you want the shop
-# to work.
-#
-# See: http://developer.android.com/google/play/billing/billing_integrate.html#billing-security
-# Modifies: ShopActivity.java in src/net/globide/creepypasta_files_07/
-BILLING_PUBLIC_KEY=""
 
 ######################
 # SYSTEM CONFIGURATION
@@ -74,15 +76,14 @@ function check_sanity {
     message="Error: You must set the \$AD_UNIT_ID variable"
     printf "\e[31m$message\e[0m\n"
   fi
-  if [ -z "$PHYSICAL_DEVICE_ID" ]; then
-    isInvalid=true
-    message="Error: You must set the \$PHYSICAL_DEVICE_ID variable"
-    printf "\e[31m$message\e[0m\n"
-  fi
   if [ -z "$BILLING_PUBLIC_KEY" ]; then
     isInvalid=true
     message="Error: You must set the \$BILLING_PUBLIC_KEY variable"
     printf "\e[31m$message\e[0m\n"
+  fi
+  if [ -z "$PHYSICAL_DEVICE_ID" ]; then
+    message="Warning: No \$PHYSICAL_DEVICE_ID set"
+    printf "\e[33m$message\e[0m\n"
   fi
   if $isInvalid; then
     message="Build aborted due to errors!"
@@ -91,25 +92,31 @@ function check_sanity {
   fi
 }
 
-function prepare_layouts {
-  target="$PROJECT_DIR/res/layout*/activity_node.xml"
-  sub_string="s|YOUR_AD_UNIT_ID|$AD_UNIT_ID|g"
-  sed_file "$target" "$sub_string"
-}
-
-function prepare_NodeActivity {
-  # Have the shell interpret the newline for cross-compatibility.
-  # (Some versions of sed won't interpret it).
-  lf=$'\n'
-  target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/NodeActivity.java"
-  sub_string="s|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);\\$lf                    adRequest.addTestDevice(\"$PHYSICAL_DEVICE_ID\");|g"
-  sed_file "$target" "$sub_string"
+function prepare_strings {
+  if [ ! -z "$AD_UNIT_ID" ]; then
+    target="$PROJECT_DIR/res/values/strings.xml"
+    sub_string="s|YOUR_AD_UNIT_ID|$AD_UNIT_ID|g"
+    sed_file "$target" "$sub_string"
+  fi
 }
 
 function prepare_ShopActivity {
-  target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/ShopActivity.java"
-  sub_string="s|String base64EncodedPublicKey = getKey();|String base64EncodedPublicKey = \"$BILLING_PUBLIC_KEY\";|g"
-  sed_file "$target" "$sub_string"
+  if [ ! -z "$BILLING_PUBLIC_KEY" ]; then
+    target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/ShopActivity.java"
+    sub_string="s|String base64EncodedPublicKey = \"YOUR_BILL_KEY_HERE\";|String base64EncodedPublicKey = \"$BILLING_PUBLIC_KEY\";|g"
+    sed_file "$target" "$sub_string"
+  fi
+}
+
+function prepare_NodeActivity {
+  if [ ! -z "$PHYSICAL_DEVICE_ID" ]; then
+    # Have the shell interpret the newline for cross-compatibility.
+    # (Some versions of sed won't interpret it).
+    lf=$'\n'
+    target="$PROJECT_DIR/src/net/globide/creepypasta_files_07/NodeActivity.java"
+    sub_string="s|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);|adRequest.addTestDevice(AdRequest.TEST_EMULATOR);\\$lf                    adRequest.addTestDevice(\"$PHYSICAL_DEVICE_ID\");|g"
+    sed_file "$target" "$sub_string"
+  fi
 }
 
 function update_android_project {
@@ -139,7 +146,7 @@ case "$1" in
 all)
   validate_user
   check_sanity
-  prepare_layouts
+  prepare_strings
   prepare_NodeActivity
   prepare_ShopActivity
   update_android_project
