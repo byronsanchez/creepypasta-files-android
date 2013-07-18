@@ -102,7 +102,6 @@ public class ShopActivity extends Activity implements OnClickListener {
         // Tag so we can access each view when updating the UI.
         private String tag;
         private String sku;
-
     }
 
     /**
@@ -113,7 +112,6 @@ public class ShopActivity extends Activity implements OnClickListener {
         // Tag so we can access each view when updating the UI.
         private String tag;
         private String sku;
-
     }
 
     /**
@@ -124,7 +122,6 @@ public class ShopActivity extends Activity implements OnClickListener {
         // Tag so we can access each view when updating the UI.
         private String tag;
         private String sku;
-
     }
     
 	    /**
@@ -154,7 +151,7 @@ public class ShopActivity extends Activity implements OnClickListener {
 	        mRlShopProgress = (RelativeLayout) findViewById(R.id.rlShopProgress);
 
 	        // Create the progressbar view
-	        pbShopQuery = new ProgressBar(this, null, android.R.attr.progressBarStyleLargeInverse);
+	        pbShopQuery = new ProgressBar(this, null, android.R.attr.progressBarStyleLarge);
 
 	        // Give the progressbar some parameters.
 	        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(
@@ -188,7 +185,7 @@ public class ShopActivity extends Activity implements OnClickListener {
 	         * want to make it easy for an attacker to replace the public key with
 	         * one of their own and then fake messages from the server.
 	         */
-	        String base64EncodedPublicKey = getKey();
+	        String base64EncodedPublicKey = "YOUR_DEV_KEY_HERE";
 
           // TODO: Implement the preceeding comment in some way.
 
