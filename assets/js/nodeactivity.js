@@ -23,46 +23,20 @@
  * THE SOFTWARE.
  */
 
-package net.globide.creepypasta_files_07;
-
-import android.content.Context;
-import android.util.AttributeSet;
-import android.view.MotionEvent;
-import android.webkit.WebView;
-
 /**
- * A WebView that offers only the "pinch to zoom" mechanism and does not offer
- * the default zoom controls.
+ * Updates all image sizes.
  */
+ function updateImages(newSize) {
+    var w = newSize,
+        // iteration counter
+        j,
+        // current iteration's img.
+        img;
 
-public class PinchToZoomWebView extends WebView {
-
-    public PinchToZoomWebView(Context context) {
-        super(context);
+    for (j = 0; j < document.images.length; j += 1) {
+        img = document.images[j];
+        img.style.width = w + 'px';
+        img.style.display = 'block';
     }
+ }
 
-    public PinchToZoomWebView(Context context, AttributeSet attrs) {
-        super(context, attrs);
-    }
-
-    public PinchToZoomWebView(Context context, AttributeSet attrs, int defStyle) {
-        super(context, attrs, defStyle);
-    }
-
-    @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        int pointerCount = event.getPointerCount();
-
-        if (pointerCount > 1) {
-            getSettings().setSupportZoom(true);
-            getSettings().setBuiltInZoomControls(true);
-        }
-        else {
-            getSettings().setSupportZoom(false);
-            getSettings().setBuiltInZoomControls(false);
-        }
-
-        super.onTouchEvent(event);
-        return true;
-    }
-}

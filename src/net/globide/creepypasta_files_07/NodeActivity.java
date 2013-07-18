@@ -34,24 +34,28 @@ import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.PackageManager.NameNotFoundException;
+import android.content.res.Configuration;
 import android.graphics.Color;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.DisplayMetrics;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.Window;
 import android.view.WindowManager;
+import android.webkit.WebSettings.PluginState;
 import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.ImageButton;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
 import com.google.ads.AdRequest;
 import com.google.ads.AdView;
+import com.google.ads.AdSize;
 
 /**
  * Outputs a single node for a user to read. This includes the title and the
@@ -87,6 +91,14 @@ public class NodeActivity extends Activity implements OnClickListener {
     // database.
     private Variable[] mVariableData;
 
+    // Cached calculated values so we don't have to regenerate them if they are
+    // needed again
+    private float mScreenWidth;
+    private float mScreenHeight;
+    private float mScreenWidthPadded;
+    private float mScreenHeightPadded;
+    private float mScreenMin;
+
     // Define necessary view properties.
     private TextView mTvNodeTitle;
     private PinchToZoomWebView mWvNodeBody;
@@ -100,6 +112,9 @@ public class NodeActivity extends Activity implements OnClickListener {
     public static boolean sIsNormal = false;
     public static boolean sIsLarge = false;
     public static boolean sIsExtraLarge = false;
+
+    private boolean mAreAdsEnabled = false;
+    private boolean mIsJavaScriptLoaded = false;
 
     /**
      * Implements onCreate(). Loads preferences if they exist and sets up the
@@ -197,35 +212,63 @@ public class NodeActivity extends Activity implements OnClickListener {
             padding = 4;
         }
 
-        // Get the screen width and height.
+        // Calculate screen metrics
         DisplayMetrics dm = new DisplayMetrics();
         getWindowManager().getDefaultDisplay().getMetrics(dm);
-        float width = dm.widthPixels;
-        float height = dm.heightPixels;
-        float itemWidth = width - (padding * 2);
-        float itemHeight = height - (padding * 2);
+        mScreenWidth = dm.widthPixels;
+        mScreenHeight = dm.heightPixels;
+        mScreenWidthPadded = mScreenWidth - (padding * 2);
+        mScreenHeightPadded = mScreenHeight - (padding * 2);
+        mScreenMin = Math.min(mScreenWidthPadded, mScreenHeightPadded);
 
         // Render any custom tags if necessary.
-        mNodeData.body = renderCustomTags(mNodeData.body, itemWidth);
+        mNodeData.body = renderCustomTags(mNodeData.body);
         // Populate the text fields with corresponding data from the SQLite
         // database.
         mTvNodeTitle.setText(mNodeData.title);
         String encoding = "utf-8";
         String mime = "text/html";
-        mWvNodeBody.setPadding((int) padding, (int) padding, (int) padding, (int) padding);
+        //mWvNodeBody.setPadding((int) padding, (int) padding, (int) padding, (int) padding);
         mWvNodeBody.setWebViewClient(new CustomWebViewClient(this));
+        mWvNodeBody.getSettings().setSupportZoom(false);
+        mWvNodeBody.getSettings().setBuiltInZoomControls(false);
         mWvNodeBody.getSettings().setJavaScriptEnabled(true);
         mWvNodeBody.getSettings().setJavaScriptCanOpenWindowsAutomatically(false);
-        mWvNodeBody.getSettings().setPluginsEnabled(true);
+        if (Build.VERSION.SDK_INT < 8) {
+            mWvNodeBody.getSettings().setPluginsEnabled(true);
+        }
+        else {
+            mWvNodeBody.getSettings().setPluginState(PluginState.ON);
+        }
         mWvNodeBody.setBackgroundColor( Color.parseColor("#000000") );
         mWvNodeBody.setHorizontalScrollBarEnabled(true); 
         mWvNodeBody.setVerticalScrollBarEnabled(true); 
         mWvNodeBody.setScrollBarStyle(PinchToZoomWebView.SCROLLBARS_OUTSIDE_OVERLAY);
         // For 2.0 and 2.1 - Double tap won't work without this.
         mWvNodeBody.getSettings().setUseWideViewPort(true);
-        String nodeURI="file:///android_asset/raw/";
-
-        mWvNodeBody.loadDataWithBaseURL(nodeURI, "<html><meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=10.0, user-scalable=yes\" /><style type=\"text/css\"> img {width: " + itemWidth + ";}</style><body bgcolor=\"#000000\" text=\"#C4C4C4\">" + mNodeData.body + "</body></html>", mime, encoding, "");
+        String nodeURI = "file:///android_asset/raw/";
+        String data = "<!DOCTYPE html>" +
+                "    <head>" +
+                "        <meta charset=\"utf-8\">" +
+                "        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=10.0, user-scalable=yes\">" +
+                "        <link rel=\"stylesheet\"  href=\"file:///android_asset/css/nodeactivity.css\">" +
+                "        <script src=\"file:///android_asset/js/nodeactivity.js\"></script>" +
+                "        <style type=\"text/css\">" +
+                "            body {" +
+                "                font-family: \"%@\";" +
+                "                margin: 0;" +
+                "                padding: " + padding + "px;" +
+                "            }" +
+                "            img {" +
+                "                width: " + mScreenMin + "px;" +
+                "            }" +
+                "        </style>" +
+                "    </head>" +
+                "    <body bgcolor=\"#000000\" text=\"#C4C4C4\">" +
+                mNodeData.body +
+                "    </body>" +
+                "</html>";
+        mWvNodeBody.loadDataWithBaseURL(nodeURI, data, mime, encoding, "");
 
         /*
          * AdMob.
@@ -233,14 +276,23 @@ public class NodeActivity extends Activity implements OnClickListener {
         for (Variable variable : mVariableData) {
             if (variable.sku.equals("001_no_ads")) {
                 if (variable.value.equals("0")) {
-                    AdRequest adRequest = new AdRequest();
-                    adRequest.addTestDevice(AdRequest.TEST_EMULATOR);
-
-                    mAdView = (AdView) findViewById(R.id.avNodeBottom);
-                    mAdView.loadAd(adRequest);
+                    mAreAdsEnabled = true;
                 }
             }
         }
+    }
+
+    /**
+     * Implements onConfigurationChanged.
+     *
+     * Handles configuration changes manually instead of restarting and
+     * recreating the activity. In this case, this will help maintain
+     * the webview scroll position. Consequently, we must dynamically
+     * resize certain elements.
+     */
+    public void onConfigurationChanged(Configuration newConfig) {
+        super.onConfigurationChanged(newConfig);
+        updateView();
     }
 
     /**
@@ -259,6 +311,11 @@ public class NodeActivity extends Activity implements OnClickListener {
      * Updates the node display based on text configuration preferences.
      */
     private void updateView() {
+
+        /**
+         * Text size.
+         */
+
         // Get shared preferences, if they exist. Else, use the default value.
         mSharedPreferences = getSharedPreferences(sFilename, 0);
 
@@ -269,6 +326,50 @@ public class NodeActivity extends Activity implements OnClickListener {
 
         // Update the node body's text size.
         mWvNodeBody.getSettings().setDefaultFontSize(textSize);
+
+
+        /**
+         * Ads.
+         */
+
+        // Request a new ad to update the ad orientation if ads are enabled.
+
+        if (mAreAdsEnabled) {
+            mAdView = (AdView)findViewById(R.id.avNodeBottom);
+            RelativeLayout parent = (RelativeLayout) mAdView.getParent();
+            RelativeLayout.LayoutParams adViewParams = (RelativeLayout.LayoutParams) mAdView.getLayoutParams();
+
+            parent.removeView(mAdView);
+            mAdView = new AdView(this, AdSize.SMART_BANNER, getString(R.string.admob_pub_id));
+            mAdView.setId(R.id.avNodeBottom);
+            parent.addView(mAdView, adViewParams);
+
+            AdRequest adRequest = new AdRequest();
+            adRequest.addTestDevice(AdRequest.TEST_EMULATOR);
+            mAdView.loadAd(adRequest);
+        }
+
+        /**
+         * JavaScript.
+         */
+
+        // Update the node body's javascript positioning.
+        if (mIsJavaScriptLoaded) {
+            updateJavaScript();
+        }
+    }
+
+    /**
+     * Updates the webview's javascript.
+     */
+    public void updateJavaScript() {
+        /**
+         * Video Embeds.
+         */
+
+        // Image updates only since video embeds get converted to image links.
+        String javascript = "javascript:updateImages(" + mScreenMin + ");";
+        mWvNodeBody.loadUrl(javascript);
     }
 
     /**
@@ -403,46 +504,42 @@ public class NodeActivity extends Activity implements OnClickListener {
      * Renders tags placed in the node and returns the entired body of the node, whether
      * it has been rendered or not.
      */
-    public String renderCustomTags(String nodeString, float width) {
+    public String renderCustomTags(String nodeString) {
         // Video tags
         String syntax = "\\[video\\s+?(.*?)(?:\\s+?\\|\\s+?(.*?))?\\]";
         Pattern pattern = Pattern.compile(syntax);
         Matcher matcher = pattern.matcher(nodeString);
-        float height = 0;
+        boolean isNameSet = false;
 
         while (matcher.find()) {
             String matchString = matcher.group(0);
             String source = matcher.group(1);
-            String style = matcher.group(2);
+            String name = matcher.group(2);
 
             if (source != null && !(source.length() == 0)) {
-                // Set default and flags for optional components.
-                if (style == null || style.length() == 0) {
-                    height = .75f * width;
+                if (name != null && !(name.length() == 0)) {
+                   isNameSet = true;
                 }
-                else {
-                    if (style.equals("widescreen")) {
-                        height = .5625f * width;
-                    }
-                    else {
-                        // If it's set to anything else, just use the default value.
-                        height = .75f * width;
-                    }
-                }
-
                 // Youtube regex.
                 String syntaxYoutube = "(?:https?:\\/\\/)?(?:www\\.)?youtu(?:\\.be|be\\.com)\\/(?:watch\\?v=)?([\\w\\-]{10,})";
                 Pattern patternYoutube = Pattern.compile(syntaxYoutube);
                 Matcher matcherYoutube = patternYoutube.matcher(source);
-                // Truncate any decimal portions.
-                int intWidth = (int) width;
-                int intHeight = (int) height;
 
                 if (matcherYoutube.find()) {
                     String id = matcherYoutube.group(1);
                     // Match only the particular tag we are working on. This is
                     // because there may be multiple video tags per page.
-                    String replacementString = "<iframe width=\"" + intWidth + "\" height=\"" + intHeight + "\" src=\"http://www.youtube.com/embed/" + id + "\" frameborder=\"0\" allowfullscreen></iframe>";
+                    String label = "[play video]";
+                    // NAME and LABEL are two seperate placeholders.
+                    String replacementString = "<div class=\"mobile-youtube\"><a class=\"image-link\" href=\"http://youtube.com/embed/VIDEOID\"><img src=\"http://i.ytimg.com/vi/VIDEOID/0.jpg\" ></a><br /><a href=\"http://youtube.com/embed/VIDEOID\" class=\"text-link\">NAMELABEL</a></div>";
+                    replacementString = replacementString.replace("VIDEOID", id);
+                    replacementString = replacementString.replace("LABEL", label);
+                    if (isNameSet) {
+                        replacementString = replacementString.replace("NAME", name + "<br />");
+                    }
+                    else {
+                        replacementString = replacementString.replace("NAME", "");
+                    }
                     nodeString = nodeString.replace(matchString, replacementString);
                 }
             }
@@ -471,7 +568,7 @@ public class NodeActivity extends Activity implements OnClickListener {
         }
 
         /**
-         * Overrides shouldOverrideUrlLoading().
+         * Implements shouldOverrideUrlLoading().
          *
          * Overrides WebView browser loads. If the content being loaded comes from
          * a particular URL, we can change what happens. For this case, we are
@@ -513,7 +610,7 @@ public class NodeActivity extends Activity implements OnClickListener {
         }
 
         /**
-         * Overrides onPageFinished().
+         * Implements onPageFinished().
          *
          * When the page is finished loading, the youtube iframe embed will show up, but it
          * will still act like an embedded object, since it is not an actual link. This
@@ -523,27 +620,9 @@ public class NodeActivity extends Activity implements OnClickListener {
          */
         @Override
         public void onPageFinished(final WebView view, String url) {
-            
-            String javascript = "javascript:" +
-                "var iframes = document.getElementsByTagName('iframe');" +
-                "for (var i = 0, l = iframes.length; i < l; i++) {" +
-                "   var iframe = iframes[i]," +
-                "   a = document.createElement('a');" +
-                "   a.setAttribute('href', iframe.src);" +
-                "   d = document.createElement('div');" +
-                "   d.style.width = iframe.offsetWidth + 'px';" +
-                "   d.style.height = iframe.offsetHeight + 'px';" +
-                "   d.style.top = iframe.offsetTop + 'px';" +
-                "   d.style.left = iframe.offsetLeft + 'px';" +
-                "   d.style.position = 'absolute';" +
-                "   d.style.opacity = '0';" +
-                "   d.style.filter = 'alpha(opacity=0)';" +
-                "   d.style.background = 'black';" +
-                "   a.appendChild(d);" +
-                "   iframe.offsetParent.appendChild(a);" +
-                "}";
-            view.loadUrl(javascript);
-
+            NodeActivity contextActivity = (NodeActivity) mContext;
+            contextActivity.updateJavaScript();
+            mIsJavaScriptLoaded = true;
             super.onPageFinished(view, url);
         }
     }
