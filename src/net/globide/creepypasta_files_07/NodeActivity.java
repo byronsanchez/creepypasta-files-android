@@ -252,7 +252,6 @@ public class NodeActivity extends Activity implements OnClickListener {
                 "        <meta charset=\"utf-8\">" +
                 "        <meta name=\"viewport\" content=\"width=device-width, initial-scale=1, minimum-scale=1, maximum-scale=10.0, user-scalable=yes\">" +
                 "        <link rel=\"stylesheet\"  href=\"file:///android_asset/css/nodeactivity.css\">" +
-                "        <script src=\"file:///android_asset/js/nodeactivity.js\"></script>" +
                 "        <style type=\"text/css\">" +
                 "            body {" +
                 "                font-family: \"%@\";" +
@@ -266,6 +265,7 @@ public class NodeActivity extends Activity implements OnClickListener {
                 "    </head>" +
                 "    <body bgcolor=\"#000000\" text=\"#C4C4C4\">" +
                 mNodeData.body +
+                "        <script src=\"file:///android_asset/js/nodeactivity.js\"></script>" +
                 "    </body>" +
                 "</html>";
         mWvNodeBody.loadDataWithBaseURL(nodeURI, data, mime, encoding, "");
