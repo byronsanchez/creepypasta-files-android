@@ -68,17 +68,9 @@ public class MainActivity extends Activity implements OnClickListener {
 
         // Database check!
 
-        // Create our database access object.
+        // Probe the database in case an upgrade or installation is necessary.
         mDbNodeHelper = new NodeDatabase((MainActivity) mContext);
-
-        // Call the create method right just in case the user has never run the
-        // app
-        // before. If a database does not exist, the prepopulated one will be
-        // copied
-        // from the assets folder. Else, a connection is established.
         mDbNodeHelper.createDatabase();
-
-        // This activity no longer needs the connection, so close it.
         mDbNodeHelper.close();
 
         // Attach the views to their corresponding resource ids.
