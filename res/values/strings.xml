@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Creepypasta Files</string>
+    <string name="hello_world">Hello world!</string>
+    <string name="menu_settings">Settings</string>
+    <string name="tv_shop_text">[shop]</string>
+    <string name="tv_shop_description">Each item is a pay once unlimited use item.</string>
+    <string name="tv_shop_no_ads_label">TextView</string>
+    <string name="ib_shop_no_ads_buy_content_description">Button to buy the no-ads feature.</string>
+    <string name="ib_node_settings_content_description">Button to navigate to the settings screen.</string>
+    <string name="tb_node_bookmark_content_description">Button to bookmark the current story.</string>
+    <string name="tv_settings_label">[settings]</string>
+    <string name="tv_settings_text_size_label">Text Size</string>
+    <string name="tv_settings_shop_label">Visit Shop</string>
+    <string name="ib_settings_shop_content_description">Button to navigate to the shop screen.</string>
+    <string name="ib_settings_credits_content_description">Button to navigate to the credits screen.</string>
+    <string name="tv_settings_credits_label">View Credits</string>
+    <string name="b_main_bookmarks">[bookmarks]</string>
+    <string name="bookmarks_help">You do not have any bookmarks. To add a bookmark, press the bookmark button on the top left corner of any story page.</string>
+    <string name="b_main_browse">[the files]</string>
+    <string name="ib_main_settings_content_description">Button to navigate to the settings screen.</string>
+    <string name="ib_main_help_content_description">Button to navigate to the help screen.</string>
+    <string name="et_input_search">Search</string>
+    <string name="tv_browse_label">[the files]</string>
+    <string name="tv_bookmarks_label">[bookmarks]</string>
+    <string name="tv_help"><![CDATA[<b>Browse Files</b> - Navigate through the stories.<br /><br />
+
+<b>Bookmarks</b> - You can set bookmarks while reading a story for easy access in the future. Bookmark a story by pressing the bookmark button on the top left of the story screen.<br /><br />
+
+<b>Settings</b> - Configure story text size, visit the shop, or view production credits.<br /><br />
+
+<b>Help</b> - View this help screen.]]></string>
+    <string name="admob_pub_id">YOUR_AD_UNIT_ID</string>
+    
+
+</resources>

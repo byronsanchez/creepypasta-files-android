@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <RelativeLayout
+        android:id="@+id/rlNode"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:background="@drawable/title_bg" >
+
+        <ToggleButton
+            android:id="@+id/tbNodeBookmark"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentLeft="true"
+            android:background="@drawable/bookmarks_button"
+            android:contentDescription="@string/tb_node_bookmark_content_description"
+            android:textOff=""
+            android:textOn="" />
+
+        <ImageButton
+            android:id="@+id/ibNodeSettings"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_alignParentRight="true"
+            android:background="@null"
+            android:contentDescription="@string/ib_node_settings_content_description"
+            android:src="@drawable/button_settings_icon" />
+
+        <TextView
+            android:id="@+id/tvNodeTitle"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_centerInParent="true"
+            android:layout_toLeftOf="@id/ibNodeSettings"
+            android:layout_toRightOf="@id/tbNodeBookmark"
+            android:gravity="center"
+            android:inputType="none"
+            android:textColor="#C4C4C4"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rlNodeAds"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_alignParentBottom="true" >
+
+        <com.google.ads.AdView
+            xmlns:ads="http://schemas.android.com/apk/lib/com.google.ads"
+            android:id="@+id/avNodeBottom"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            ads:adSize="SMART_BANNER"
+            ads:adUnitId="@string/admob_pub_id"
+            ads:backgroundColor="#000000"
+            ads:loadAdOnCreate="false"
+            ads:primaryTextColor="#C4C4C4"
+            ads:secondaryTextColor="#AAAAAA" />
+    </RelativeLayout>
+
+    <RelativeLayout
+        android:id="@+id/rlNodeBody"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_above="@id/rlNodeAds"
+        android:layout_below="@id/rlNode" >
+
+        <net.globide.creepypasta_files_07.PinchToZoomWebView
+            android:id="@+id/wvNodeBody"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:background="#000000"
+            android:textColor="#C4C4C4" />
+
+    </RelativeLayout>
+
+</RelativeLayout>
